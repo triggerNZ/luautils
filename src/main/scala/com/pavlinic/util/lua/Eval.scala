@@ -8,17 +8,42 @@ import org.luaj.vm2.lib.jse._
  * An attempt at making lua scripts more immutable. Each call evaluates everything
  * again
  */
-class EvalImpl(initialScripts: List[String] = List()) {
-  implicit def lua2Int = (l: LuaValue) => l.checkint()
-  implicit def lua2String = (l: LuaValue) => l.checkstring().tojstring()
-  implicit def lua2StringStringTable = (l: LuaValue) => {
-    val luaTable = l.checktable()
-    Map(luaTable.keys().map { lvKey =>
-      lvKey.checkstring().tojstring() -> luaTable.get(lvKey).checkstring().tojstring()
-    }: _*)
-  }
 
-  def eval[V](luaString: String)(implicit conv: LuaValue => V): V = {
+trait FromLua[T] {
+  def apply(l: LuaValue): T
+}
+
+object SimpleConversions {
+  implicit val lua2Int = new FromLua[Int] {
+    def apply(l: LuaValue) = l.checkint()
+  }
+  implicit val lua2String = new FromLua[String] {
+    def apply(l: LuaValue) = l.checkstring().tojstring()
+  }
+  implicit val lua2StringStringTable = new FromLua[Map[String, String]] {
+    def apply(l: LuaValue) = {
+      val luaTable = l.checktable()
+      Map(luaTable.keys().map { lvKey =>
+        lvKey.checkstring().tojstring() -> luaTable.get(lvKey).checkstring().tojstring()
+      }: _*)
+    }
+  }
+}
+
+
+object ShapelessConversions {
+  import shapeless._
+  implicit def luaToRecord[A <: Product](implicit asRecord: Default.AsRecord[A]): FromLua[A] = new FromLua[A] {
+      def apply(l: LuaValue) = {
+        println(asRecord())
+      ???
+    }
+  }
+}
+
+class EvalImpl(initialScripts: List[String] = List()) {
+
+  def eval[V](luaString: String)(implicit conv: FromLua[V]): V = {
     val globals = minimalGlobals
     initialScripts.foreach(s=> globals.load(s).call())
     conv(globals.load(luaString).call())
