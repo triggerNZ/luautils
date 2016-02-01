@@ -5,7 +5,24 @@ import org.luaj.vm2._
 import shapeless._, record._, syntax.singleton._, ops.record._, ops.hlist._
 import shapeless.labelled.{FieldBuilder, FieldType, KeyTag}
 
-object FromLua {
+object FromLuaGenericImplicits {
+  implicit def lua2Option[T : FromLua] = new FromLua[Option[T]] {
+    def apply(l : LuaValue) = {
+      val flt = FromLua[T]
+      if (l.isnil()) None else Some(flt(l))
+    }
+  }
+
+  implicit def lua2StringValueTable[V : FromLua] = new FromLua[Map[String, V]] {
+    def apply(l: LuaValue) = {
+      val luaTable = l.checktable()
+      Map(luaTable.keys().map { lvKey =>
+        val flv = implicitly[FromLua[V]]
+        lvKey.checkstring().tojstring() -> flv(luaTable.get(lvKey))
+      }: _*)
+    }
+  }
+
   implicit def lua2A[A <: Product, Rec <: HList, Fs <: HList]
   (implicit gen: LabelledGeneric.Aux[A, Rec],
             fs: Fields.Aux[Rec, Fs],

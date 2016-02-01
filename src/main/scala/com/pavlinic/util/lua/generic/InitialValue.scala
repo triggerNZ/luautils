@@ -10,6 +10,10 @@ trait InitialValue[A] extends DepFn0 {
 object InitialValue {
   def apply[A](implicit iva: InitialValue[A]) = iva
 
+  implicit def ivOption[T]: InitialValue[Option[T]] = new InitialValue[Option[T]] {
+    override def apply = None
+  }
+
   implicit val ivInt = new InitialValue[Int] {
     def apply = 0
   }

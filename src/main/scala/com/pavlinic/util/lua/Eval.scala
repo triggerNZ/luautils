@@ -14,21 +14,16 @@ trait FromLua[T] {
   def apply(l: LuaValue): T
 }
 
+object FromLua {
+  def apply[T](implicit flt: FromLua[T]) = flt
+}
+
 object SimpleConversions {
   implicit val lua2Int = new FromLua[Int] {
     def apply(l: LuaValue) = l.checkint()
   }
   implicit val lua2String = new FromLua[String] {
     def apply(l: LuaValue) = l.checkstring().tojstring()
-  }
-  implicit def lua2StringValueTable[V : FromLua] = new FromLua[Map[String, V]] {
-    def apply(l: LuaValue) = {
-      val luaTable = l.checktable()
-      Map(luaTable.keys().map { lvKey =>
-        val flv = implicitly[FromLua[V]]
-        lvKey.checkstring().tojstring() -> flv(luaTable.get(lvKey))
-      }: _*)
-    }
   }
 }
 
