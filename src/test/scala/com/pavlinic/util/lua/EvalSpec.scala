@@ -14,6 +14,7 @@ class EvalSpec extends Specification { def is = s2"""
       evaluate tables $tables
       evaluate flat case classes $flatCaseClass
       evaluate flat case classes $nestedCaseClass
+      evaluate case classes with repeated type $sameTypeInCaseClass
       optional values $options
    """
 
@@ -58,7 +59,11 @@ class EvalSpec extends Specification { def is = s2"""
   def nestedCaseClass = {
      case class A(i: Int, b: B)
      case class B(s: String)
-    1 === 1
      eval[A]("return {i = 5, b = {s = 'blah'}}") === A(5, B("blah"))
+  }
+
+  def sameTypeInCaseClass = {
+    case class A(i: Int, b: Int)
+    eval[A]("return {i = 5, b = 6}") === A(5, 6)
   }
  }
