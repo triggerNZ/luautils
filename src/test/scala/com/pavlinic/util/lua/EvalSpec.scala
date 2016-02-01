@@ -38,17 +38,18 @@ class EvalSpec extends Specification { def is = s2"""
   }
 
   def flatCaseClass = {
-    import ShapelessConversions._
+    import generic.FromLua._
+
     case class A(i: Int, s: String)
     eval[A]("return {i = 5, s = 'blah'}") === A(5, "blah")
   }
 
   def nestedCaseClass = {
+    import generic.FromLua._
+
+     case class A(i: Int, b: B)
+     case class B(s: String)
     1 === 1
-//    import ShapelessConversions._
-    // case class A(i: Int, b: B)
-    // case class B(s: String)
-    //
-    // eval[A]("return {i = 5, b = {s = 'blah'}}") === A(5, B("blah"))
+     //eval[A]("return {i = 5, b = {s = 'blah'}}") === A(5, B("blah"))
   }
  }
