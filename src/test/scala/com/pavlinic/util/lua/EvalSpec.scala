@@ -50,6 +50,6 @@ class EvalSpec extends Specification { def is = s2"""
      case class A(i: Int, b: B)
      case class B(s: String)
     1 === 1
-     //eval[A]("return {i = 5, b = {s = 'blah'}}") === A(5, B("blah"))
+     eval[A]("return {i = 5, b = {s = 'blah'}}") === A(5, B("blah"))
   }
  }

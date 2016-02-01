@@ -3,23 +3,21 @@ package generic
 
 import org.luaj.vm2._
 import shapeless._, record._, syntax.singleton._, ops.record._, ops.hlist._
+import shapeless.labelled.{FieldBuilder, FieldType, KeyTag}
 
 object FromLua {
-  implicit def lua2A[A <: Product, Fields <: HList, Ks <: HList]
-  (implicit gen: LabelledGeneric.Aux[A, Fields],
-            ks: Keys.Aux[Fields, Ks],
-            toList: ToTraversable.Aux[Ks, List, Symbol],
-            folder: LeftFolderWithValue.Aux[Ks, Fields, combine.type, LuaValue, Fields],
+  implicit def lua2A[A <: Product, Rec <: HList, Fs <: HList]
+  (implicit gen: LabelledGeneric.Aux[A, Rec],
+            fs: Fields.Aux[Rec, Fs],
+            folder: LeftFolderWithValue.Aux[Fs, Rec, combine.type, LuaValue, Rec],
             iv: InitialValue[A]): FromLua[A] = new FromLua[A] {
     def apply(l: LuaValue): A = {
       val initial = iv()
-      val initialRecord: Fields = gen.to(initial)
+      val initialRecord: Rec = gen.to(initial)
 
-      val keys: Ks = initialRecord.keys
-      val folded: Fields = folder(keys, initialRecord, l)
+      val fields: Fs = initialRecord.fields
+      val folded: Rec = folder(fields, initialRecord, l)
       gen.from(folded)
-
-      initial
     }
   }
 
@@ -30,7 +28,16 @@ object FromLua {
   }
 
   object combine extends Poly {
-    implicit def onlyCase[Fields, K] = use { (cur: Fields, next: K, v: LuaValue) => cur }
+    implicit def onlyCase[Rec <: HList, K <: Symbol, V]
+    (implicit vlv: FromLua[V],
+              updater: Updater[Rec, FieldType[K, V]]) =
+      use { (cur: Rec, field: (K, V), v: LuaValue) =>
+        val fieldKey: K = field._1
+        val luaValue = v.get(fieldKey.name)
+        val newValue: V = vlv(luaValue)
+        val newRecord = cur + (new FieldBuilder[K]()(newValue))
+        newRecord
+    }
   }
 
 
@@ -59,7 +66,4 @@ object FromLua {
         }
       }
   }
-
-
-
 }
