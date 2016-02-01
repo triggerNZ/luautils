@@ -49,8 +49,10 @@ class EvalSpec extends Specification { def is = s2"""
 
   def flatCaseClass = {
     case class A(i: Int, s: String, opt: Option[Int])
-    eval[A]("return {i = 5, s = 'blah'}") === A(5, "blah", None)
-    eval[A]("return {i = 5, s = 'blah', opt = 50}") === A(5, "blah", Some(50))
+    Seq(
+      eval[A]("return {i = 5, s = 'blah'}") === A(5, "blah", None),
+      eval[A]("return {i = 5, s = 'blah', opt = 50}") === A(5, "blah", Some(50))
+    )
   }
 
   def nestedCaseClass = {
