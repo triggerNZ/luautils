@@ -21,11 +21,12 @@ object SimpleConversions {
   implicit val lua2String = new FromLua[String] {
     def apply(l: LuaValue) = l.checkstring().tojstring()
   }
-  implicit val lua2StringStringTable = new FromLua[Map[String, String]] {
+  implicit def lua2StringValueTable[V : FromLua] = new FromLua[Map[String, V]] {
     def apply(l: LuaValue) = {
       val luaTable = l.checktable()
       Map(luaTable.keys().map { lvKey =>
-        lvKey.checkstring().tojstring() -> luaTable.get(lvKey).checkstring().tojstring()
+        val flv = implicitly[FromLua[V]]
+        lvKey.checkstring().tojstring() -> flv(luaTable.get(lvKey))
       }: _*)
     }
   }

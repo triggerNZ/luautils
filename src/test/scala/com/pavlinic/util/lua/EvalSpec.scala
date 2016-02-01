@@ -34,7 +34,11 @@ class EvalSpec extends Specification { def is = s2"""
   }
 
   def tables = {
-    eval[Map[String, String]]("return {x = 'a', y = 'b'}") === Map("x" -> "a", "y" -> "b")
+    Seq(
+      eval[Map[String, String]]("return {x = 'a', y = 'b'}") === Map("x" -> "a", "y" -> "b"),
+      eval[Map[String, Int]]("return {x = 1, y = 2}") === Map("x" -> 1, "y" -> 2)
+
+    )
   }
 
   def flatCaseClass = {
